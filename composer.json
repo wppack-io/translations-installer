@@ -1,0 +1,25 @@
+{
+    "name": "wppack/translations-installer",
+    "description": "Composer plugin that downloads WordPress core, plugin and theme translations from wordpress.org as packages are installed or updated.",
+    "type": "composer-plugin",
+    "license": "GPL-2.0-or-later",
+    "keywords": ["wordpress", "translations", "composer-plugin", "i18n"],
+    "require": {
+        "php": "^8.2",
+        "composer-plugin-api": "^2.0",
+        "ext-zip": "*"
+    },
+    "require-dev": {
+        "composer/composer": "^2.5",
+        "friendsofphp/php-cs-fixer": "^3.68",
+        "phpstan/phpstan": "^2.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "WPPack\\TranslationsInstaller\\": "src"
+        }
+    },
+    "extra": {
+        "class": "WPPack\\TranslationsInstaller\\TranslationsInstaller"
+    }
+}

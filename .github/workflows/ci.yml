@@ -1,0 +1,85 @@
+name: CI
+
+on:
+  push:
+    branches: ['[0-9]+.x']
+  pull_request:
+
+jobs:
+  checks:
+    name: PHP ${{ matrix.php }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php: ['8.2', '8.3', '8.4']
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: ${{ matrix.php }}
+          extensions: zip
+          coverage: none
+
+      - run: composer validate --strict
+
+      - uses: ramsey/composer-install@v3
+
+      - run: vendor/bin/phpstan analyse --no-progress
+
+      - run: vendor/bin/php-cs-fixer check --diff
+        env:
+          PHP_CS_FIXER_IGNORE_ENV: '1'
+
+  smoke-test:
+    name: Smoke test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: plugin
+
+      - uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.2'
+          extensions: zip
+          coverage: none
+
+      # A real project that consumes the plugin from this checkout and
+      # installs a wordpress.org plugin, so the whole flow runs against the
+      # live translations API.
+      - name: Create test project
+        run: |
+          mkdir project && cd project
+          cat > composer.json <<'EOF'
+          {
+              "repositories": [
+                  { "type": "path", "url": "../plugin" },
+                  { "type": "composer", "url": "https://wpackagist.org" }
+              ],
+              "require": {
+                  "wppack/translations-installer": "@dev",
+                  "wpackagist-plugin/query-monitor": "*"
+              },
+              "extra": {
+                  "wordpress-translations": ["ja"],
+                  "wordpress-translations-dir": "languages"
+              },
+              "config": {
+                  "allow-plugins": {
+                      "wppack/translations-installer": true,
+                      "composer/installers": true
+                  }
+              }
+          }
+          EOF
+
+      - name: Install the test project
+        working-directory: project
+        run: composer install --no-interaction
+
+      - name: Assert translations were downloaded
+        run: |
+          find project/languages -type f
+          test -n "$(find project/languages/plugins -name 'query-monitor-ja*' -print -quit)"
