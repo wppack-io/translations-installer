@@ -14,7 +14,7 @@ jobs:
       matrix:
         php: ['8.2', '8.3', '8.4']
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - uses: shivammathur/setup-php@v2
         with:
@@ -24,7 +24,7 @@ jobs:
 
       - run: composer validate --strict
 
-      - uses: ramsey/composer-install@v3
+      - run: composer install --no-interaction --prefer-dist
 
       - run: vendor/bin/phpstan analyse --no-progress
 
@@ -36,7 +36,7 @@ jobs:
     name: Smoke test
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
         with:
           path: plugin
 
