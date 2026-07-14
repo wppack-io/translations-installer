@@ -10,6 +10,7 @@
         "ext-zip": "*"
     },
     "replace": {
+        "bjornjohansen/wplang": "*",
         "wpnx-io/wp-translations": "*"
     },
     "require-dev": {
