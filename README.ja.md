@@ -64,6 +64,50 @@ $ composer require wppack/translations-installer
 設定ロケールの翻訳が存在しないパッケージはメモを出力してスキップされ、
 翻訳が原因でインストール自体が失敗することはありません。
 
+## コマンド
+
+wordpress.org の言語パックはパッケージのリリース*後*に更新されることが
+多いため、任意のタイミングで実行できるコマンドを2つ用意しています:
+
+```console
+$ composer translations:update
+```
+
+インストール済みの全 WordPress パッケージの翻訳をダウンロードします。
+ローカルに存在しない、または wordpress.org 側が新しいロケールだけを取得し、
+最新のものはスキップします。失敗はパッケージ単位で報告され、コマンド自体は
+失敗しません。
+
+```console
+$ composer translations:status
+```
+
+パッケージ × ロケールごとの状態(`Up to date` / `Outdated`(ローカルと
+リモートの日時を併記)/ `Missing` / `Not available`)を表示する読み取り
+専用コマンドです。更新できる翻訳が1つでもあれば exit code 1 で終了する
+ため、CI での鮮度チェックにも使えます:
+
+```console
+$ composer translations:status
+wpackagist-plugin/query-monitor
+  - ja     Up to date (2026-07-03 14:02:39)
+  - fr_FR  Outdated   (local 2026-01-15 10:00:00 → remote 2026-06-20 09:14:31)
+All translations are up to date.
+```
+
+### 更新判定のしくみ
+
+wordpress.org API は言語パックごとに `updated` 日時を返し、インストール
+済みの `.po` ファイルは同じ日時を `PO-Revision-Date` ヘッダーに持って
+います。プラグインはこの2つを比較します — WordPress コア自身が言語パック
+の更新チェックに使っているのと同じ仕組みです。状態ファイルはなく、
+インストール済みファイルそのものが記録になるため、`.po` を削除すれば
+そのロケールは単に再ダウンロードされます。ダウンロード時はパック一式
+(`.po`・`.mo`・`.l10n.php`)がまとめて展開されます。
+
+同じ判定はインストール/更新フックでも動作するため、変更のない翻訳が
+フックで再ダウンロードされることもありません。
+
 ## クレジット
 
 このパッケージは Angry Creative によって開始され、Bjørn Johansen により

@@ -64,6 +64,49 @@ only, so the package name does not matter.
 Packages that have no translations for the configured locales print a note
 and are skipped; the install itself never fails because of translations.
 
+## Commands
+
+Language packs on wordpress.org are often updated *after* a package release,
+so the plugin also ships two commands that can be run at any time:
+
+```console
+$ composer translations:update
+```
+
+Downloads translations for every installed WordPress package. Only locales
+that are missing locally or outdated on wordpress.org are fetched; current
+ones are skipped. Failures are reported per package and never fail the
+command.
+
+```console
+$ composer translations:status
+```
+
+Read-only report of every package × locale: `Up to date`, `Outdated` (local
+and remote timestamps shown), `Missing` or `Not available`. Exits with code 1
+when anything can be updated, so it doubles as a CI freshness check:
+
+```console
+$ composer translations:status
+wpackagist-plugin/query-monitor
+  - ja     Up to date (2026-07-03 14:02:39)
+  - fr_FR  Outdated   (local 2026-01-15 10:00:00 → remote 2026-06-20 09:14:31)
+All translations are up to date.
+```
+
+### How freshness is decided
+
+The wordpress.org API reports an `updated` timestamp per language pack; the
+installed `.po` file carries the same timestamp in its `PO-Revision-Date`
+header. The plugin compares the two — the same mechanism WordPress core uses
+for its own language pack updates. There is no state file: the installed
+files are the record, so deleting a `.po` simply causes that locale to be
+re-downloaded. Downloads always unpack the full pack (`.po`, `.mo` and
+`.l10n.php`).
+
+The same check runs in the install/update hooks, so unchanged translations
+are not re-downloaded there either.
+
 ## Credits
 
 This package was started by Angry Creative, has been rewritten by Bjørn
