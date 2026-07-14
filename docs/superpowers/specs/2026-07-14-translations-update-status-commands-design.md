@@ -37,6 +37,13 @@ language pack ships a `.po` file whose `PO-Revision-Date:` header carries the
 same timestamp — the mechanism WordPress core itself uses
 (`wp_get_installed_translations()`).
 
+Note: a language pack ZIP contains the full file set (`.po`, `.mo`, and
+`.l10n.php` on newer WordPress) and is always extracted wholesale, so a
+download refreshes everything. The `.po` header is only the freshness
+*marker*; `.mo` files are never parsed. If the `.po` is missing locally
+(e.g. deleted manually), the locale counts as Missing and is re-downloaded —
+fail safe.
+
 Representative local `.po` file per package type:
 
 | Type   | Path relative to languages dir      |
