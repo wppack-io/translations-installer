@@ -40,6 +40,20 @@ enum PackageType: string
     }
 
     /**
+     * The representative `.po` file used for the freshness check, relative
+     * to the languages directory. Language packs always ship a `.po`; its
+     * PO-Revision-Date header matches the API `updated` timestamp.
+     */
+    public function poPath(string $slug, string $locale): string
+    {
+        return match ($this) {
+            self::Core => sprintf('/%s.po', $locale),
+            self::Plugin => sprintf('/plugins/%s-%s.po', $slug, $locale),
+            self::Theme => sprintf('/themes/%s-%s.po', $slug, $locale),
+        };
+    }
+
+    /**
      * Where the language packs unpack, relative to the languages directory:
      * core at its root, plugins and themes one level down — the same layout
      * WordPress itself uses under wp-content/languages.
