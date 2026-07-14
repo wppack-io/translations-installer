@@ -9,6 +9,9 @@
         "composer-plugin-api": "^2.0",
         "ext-zip": "*"
     },
+    "replace": {
+        "wpnx-io/wp-translations": "*"
+    },
     "require-dev": {
         "composer/composer": "^2.5",
         "friendsofphp/php-cs-fixer": "^3.68",
