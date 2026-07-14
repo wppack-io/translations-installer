@@ -38,30 +38,54 @@ final class Translatable
     ) {}
 
     /**
-     * Download and unpack the language packs for every wanted locale.
+     * Freshness of every configured locale: queries the API once and
+     * compares each locale's `updated` timestamp with the PO-Revision-Date
+     * of the locally installed `.po` file.
      *
-     * @return list<string> the locales that were installed; configured
-     *                      locales the API does not offer are silently omitted
+     * @return list<LocaleStatus> ordered as the locales were configured
      */
-    public function fetch(): array
+    public function status(): array
     {
-        $translations = $this->availableTranslations();
-        if ($translations === []) {
-            return [];
+        $available = $this->availableTranslations();
+
+        $statuses = [];
+        foreach ($this->languages as $locale) {
+            if (!isset($available[$locale])) {
+                $statuses[] = new LocaleStatus($locale, LocaleState::NotAvailable, null, null, null);
+
+                continue;
+            }
+
+            $local = PoHeader::revisionDate($this->wpLanguagesDir . $this->type->poPath($this->slug, $locale));
+            $remote = $available[$locale]['updated'];
+
+            $statuses[] = new LocaleStatus(
+                $locale,
+                LocaleState::determine($local, $remote),
+                $available[$locale]['package'],
+                $remote,
+                $local,
+            );
         }
 
-        $destPath = $this->destPath();
-        foreach ($translations as $packageUrl) {
-            $this->installTranslation($packageUrl, $destPath);
+        return $statuses;
+    }
+
+    /** Download the language-pack ZIP for one locale and unpack it. */
+    public function download(LocaleStatus $status): void
+    {
+        if ($status->packageUrl === null) {
+            throw new \LogicException('No language pack is available for ' . $status->locale);
         }
 
-        return array_keys($translations);
+        $this->installTranslation($status->packageUrl, $this->destPath());
     }
 
     /**
-     * Language-pack ZIP URLs for the wanted locales, keyed by locale.
+     * Language packs offered by the API for the wanted locales, keyed by
+     * locale.
      *
-     * @return array<string, string>
+     * @return array<string, array{package: string, updated: ?\DateTimeImmutable}>
      */
     private function availableTranslations(): array
     {
@@ -77,11 +101,28 @@ final class Translatable
             if (in_array($translation->language, $this->languages, true)) {
                 // The API offers one pack per locale for a given version;
                 // keep the first should it ever send duplicates.
-                $translations[(string) $translation->language] ??= (string) $translation->package;
+                $translations[(string) $translation->language] ??= [
+                    'package' => (string) $translation->package,
+                    'updated' => self::parseUpdated($translation->updated ?? null),
+                ];
             }
         }
 
         return $translations;
+    }
+
+    /** The API sends `updated` as a GMT timestamp like "2026-05-17 09:14:31". */
+    private static function parseUpdated(mixed $updated): ?\DateTimeImmutable
+    {
+        if (!is_string($updated) || $updated === '') {
+            return null;
+        }
+
+        try {
+            return new \DateTimeImmutable($updated, new \DateTimeZone('UTC'));
+        } catch (\Exception) {
+            return null;
+        }
     }
 
     /** The destination directory for this package type, created if missing. */
