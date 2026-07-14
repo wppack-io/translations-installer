@@ -28,6 +28,8 @@ jobs:
 
       - run: vendor/bin/phpstan analyse --no-progress
 
+      - run: vendor/bin/phpunit
+
       - run: vendor/bin/php-cs-fixer check --diff
         env:
           PHP_CS_FIXER_IGNORE_ENV: '1'
@@ -83,3 +85,26 @@ jobs:
         run: |
           find project/languages -type f
           test -n "$(find project/languages/plugins -name 'query-monitor-ja*' -print -quit)"
+
+      - name: translations:status reports up to date
+        working-directory: project
+        run: composer translations:status
+
+      - name: translations:update is a no-op when current
+        working-directory: project
+        run: composer translations:update
+
+      - name: translations:status detects a stale translation
+        working-directory: project
+        run: |
+          PO_FILE="$(find languages/plugins -name 'query-monitor-ja.po' -print -quit)"
+          sed -i 's/"PO-Revision-Date: [^\\]*/"PO-Revision-Date: 2020-01-01 00:00:00+0000/' "$PO_FILE"
+          if composer translations:status; then
+            echo 'expected exit 1 for a stale translation' >&2; exit 1
+          fi
+
+      - name: translations:update refreshes the stale translation
+        working-directory: project
+        run: |
+          composer translations:update
+          composer translations:status
