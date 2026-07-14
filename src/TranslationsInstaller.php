@@ -19,6 +19,8 @@ use Composer\DependencyResolver\Operation\UpdateOperation;
 use Composer\EventDispatcher\EventSubscriberInterface;
 use Composer\Installer\PackageEvent;
 use Composer\IO\IOInterface;
+use Composer\Plugin\Capability\CommandProvider as CommandProviderCapability;
+use Composer\Plugin\Capable;
 use Composer\Plugin\PluginInterface;
 
 /**
@@ -26,13 +28,19 @@ use Composer\Plugin\PluginInterface;
  * WordPress package (core, plugins, themes) as it is installed or updated.
  * See TranslationsDownloader for the configuration reference.
  */
-final class TranslationsInstaller implements EventSubscriberInterface, PluginInterface
+final class TranslationsInstaller implements Capable, EventSubscriberInterface, PluginInterface
 {
     private TranslationsDownloader $downloader;
 
     public function activate(Composer $composer, IOInterface $io): void
     {
         $this->downloader = new TranslationsDownloader($composer, $io);
+    }
+
+    /** @return array<string, string> */
+    public function getCapabilities(): array
+    {
+        return [CommandProviderCapability::class => CommandProvider::class];
     }
 
     /** @return array<string, string> */
