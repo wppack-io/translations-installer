@@ -16,11 +16,17 @@
     "require-dev": {
         "composer/composer": "^2.5",
         "friendsofphp/php-cs-fixer": "^3.68",
-        "phpstan/phpstan": "^2.1"
+        "phpstan/phpstan": "^2.1",
+        "phpunit/phpunit": "^11.5"
     },
     "autoload": {
         "psr-4": {
             "WPPack\\TranslationsInstaller\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "WPPack\\TranslationsInstaller\\Tests\\": "tests"
         }
     },
     "extra": {
